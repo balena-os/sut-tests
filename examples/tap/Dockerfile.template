@@ -1,0 +1,12 @@
+FROM balenalib/%%BALENA_ARCH%%-alpine-node:16-run
+WORKDIR /usr/app/
+
+COPY tests tests
+COPY package.json package.json
+
+RUN npm install tap --save-dev
+
+COPY entry.sh entry.sh
+RUN chmod +x entry.sh
+
+CMD ["/usr/app/entry.sh"]

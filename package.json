@@ -1,0 +1,35 @@
+{
+  "name": "sut-tests",
+  "version": "1.0.0",
+  "description": "- Install balena CLI (tested with v17.1.1) - clone repo - run this command:",
+  "main": "index.js",
+  "directories": {
+    "example": "examples",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rcooke-warwick/sut-tests.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rcooke-warwick/sut-tests/issues"
+  },
+  "homepage": "https://github.com/rcooke-warwick/sut-tests#readme",
+  "dependencies": {
+    "async-retry": "^1.3.3",
+    "balena-sdk": "^19.0.1",
+    "js-yaml": "^4.1.0",
+    "tap-parser": "^15.3.1",
+    "yargs": "^17.7.2",
+    "zx": "^7.2.3"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1",
+    "ev": "^0.0.7"
+  }
+}

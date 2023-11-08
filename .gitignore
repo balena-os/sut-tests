@@ -1,0 +1,5 @@
+node_modules
+.tap
+.env
+package-lock.json
+build

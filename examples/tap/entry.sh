@@ -1,0 +1,1 @@
+ ./node_modules/.bin/tap run --allow-empty-coverage

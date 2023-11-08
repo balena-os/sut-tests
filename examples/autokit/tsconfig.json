@@ -1,0 +1,25 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "es2019",
+		"outDir": "build",
+		"experimentalDecorators": true,
+		"strict": true,
+		"strictPropertyInitialization": false,
+		"preserveConstEnums": true,
+		"declaration": true,
+		"pretty": true,
+		"sourceMap": true,
+		"skipLibCheck": true,
+		"resolveJsonModule": true,
+		"strictNullChecks": true,
+		"noImplicitAny": true,
+		"allowJs": true,
+		"moduleResolution": "node",
+		"allowSyntheticDefaultImports": true,
+		"types": ["node"]
+	},
+	"include": [
+		"./"
+	]
+}
