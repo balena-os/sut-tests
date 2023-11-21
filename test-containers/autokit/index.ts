@@ -3,6 +3,7 @@ import { OsDownloadOptions, getSdk } from 'balena-sdk';
 import { readFile, createReadStream, createWriteStream, unlink } from 'fs';
 import { exec } from 'child_process';
 import { promisify} from 'util';
+import * as retry from 'async-retry';
 
 const execAsync = promisify(exec);
 
@@ -32,7 +33,8 @@ async function main(){
 
     const PATH = '/tmp/os.img'
 
-    console.log(`Trying to download OS image`)
+    console.log(`Trying to download OS image for ${process.env.DEVICE_TYPE}`)
+    console.log(`For app: ${process.env.APP}`)
     // download target os version
     await new Promise<void>(async (resolve, reject) => {
         if(process.env.DEVICE_TYPE !== undefined){
@@ -68,6 +70,12 @@ async function main(){
     
     console.log(`Staring flash!`)
     // Flash DUT
+    console.log(PATH)
+    console.log(process.env.FLASH_TYPE)
+    let check = await execAsync(`ls /tmp`)
+    console.log(check)
+    let checksd = await execAsync(`ls ${autoKit.sdMux.DEV_SD}`);
+    console.log(checksd)
     await autoKit.flash(PATH, process.env.FLASH_TYPE || 'raspberrypi3');
 
     // Power on DUT
@@ -75,16 +83,30 @@ async function main(){
 
     // Find the DUT UUID and IP address
     // Easier to find IP address first
-    let res = await execAsync(`arp -a | grep ${process.env.WIRED_IF} | awk -F " " '{print $2}'`)
-    const ip = res.stdout.replace('(', '').replace(')','');
-    console.log(`ip address of DUT is ${ip}`)
+    let uuid = ''
+    await retry(
+        async () => {
+            let res = await execAsync(`arp -a | grep ${process.env.WIRED_IF} | awk -F " " '{print $2}'`)
+            console.log(res)
+            let ip = res.stdout.replace('(', '').replace(')','');
+            console.log(`ip address of DUT is ${ip}`)
+        
+            
 
-    // Using IP, find the UUID of the device
-    res = await execAsync(`echo "cat /mnt/boot/config.json; exit" | balena ssh ${ip}`);
-    let configJson = JSON.parse(res.stdout);
-    let uuid = configJson.uuid;
-
-    console.log(`UUID of resulting device is: ${uuid}`)
+            // Using IP, find the UUID of the device
+            res = await execAsync(`ssh root@${ip.trim()} -p 22222  -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "cat /mnt/boot/config.json" 2>/dev/null`);
+            
+            console.log (res);
+            let configJson = JSON.parse(res.stdout);
+            let uuid = configJson.uuid;
+        
+            console.log(`UUID of resulting device is: ${uuid}`)
+        },
+        {
+          retries: 20,
+          minTimeout: 10 * 1000
+        }
+    );
 }
 
 main();

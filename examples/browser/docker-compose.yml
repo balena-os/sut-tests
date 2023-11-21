@@ -1,0 +1,29 @@
+version: '2.1'
+
+volumes:
+  # Only required if using PA over UNIX socket
+  settings:
+
+services:
+  # Primary composition that runs on all devices in a fleet
+  browser:
+    image: bhcr.io/balenalabs/browser-armv7hf # where <arch> is one of aarch64, arm32 or amd64
+    privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
+    network_mode: host
+    ports:
+        - '5011' # management API (optional)
+        - '35173' # Chromium debugging port (optional)
+    volumes:
+      - 'settings:/data' # Only required if using PERSISTENT flag (see below)
+  sut:
+    image: bh.cr/gh_rcooke_warwick/tap-test:latest
+    privileged: true
+    restart: "no"
+    network_mode: host
+    depends_on:
+      - "browser"
+    volumes:
+      - 'settings:/data' # Only required if using PERSISTENT flag (see below)'
+    labels:
+      io.balena.features.supervisor-api: 1
+      

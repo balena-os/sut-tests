@@ -1,6 +1,7 @@
 const { search } = require('./lib/search');
 const { teardown } = require('./lib/teardown');
 const { pinDut } = require('./lib/pin-to-release');
+const { waitSut } = require('./lib/sut');
 const { spawn } = require('child_process');
 require('dotenv').config();
 const { Parser } = require('tap-parser');
@@ -39,12 +40,6 @@ process.on('uncaughtException', async (error) => {
 global.dutUuid = '';
 
 async function main(){
-    // const args = process.argv.slice(2);
-
-    // let app = args[0];
-    // let release = args[1];
-    // let sut = args[2];
-
     const options = yargs
       .option('fleet', {
         alias: 'f',
@@ -63,23 +58,9 @@ async function main(){
         describe: 'Release hash of balena fleet release to test',
         demandOption: true,
         type: 'string',
-      })
-      .option('sut', {
-        alias: 's',
-        describe: 'Test container reference',
-        demandOption: true,
-        type: 'string',
-      })
-      .option('dut', {
-        alias: 'd',
-        describe: 'Flag to indicate whether its autokit or DUT',
-        default: true,
-        type: 'boolean',
-      }).argv;
-    
-    // laptop -> run this script -> pushes autokit sut to autokit -> autokit sut flashes dut -> autokit runs this script -> pushes the actual sut tests to DUT -> 
+      }).argv
 
-    const { fleet, target, release, sut, dut } = options;
+    const { fleet, target, release } = options;
     console.log(`Options:`)
     console.log(options)
 
@@ -93,49 +74,21 @@ async function main(){
         throw new Error(`No fleet or device provided!`)
     }
 
-    // If its a non-autokit, pin device to release
-    if (dut){
-        console.log(`Found device ${global.dutUuid}, pinning to release ${release}`);
-        await pinDut(release, dutUuid)
+  
+    console.log(`Found device ${global.dutUuid}, pinning to release ${release}`);
+    await pinDut(release, global.dutUuid);
+    
+    console.log(`### Beginning test ###`)
+    // DUT is now pinned to target release, wait for the test 
+    // at this point, we can assume that the device is actually "running" the target release
+    let testId = `${Math.random().toString(36).substring(2, 10)}`
+    let res = await waitSut(release, global.dutUuid, testId);
+
+    for(let log of res.testlogs){
+      console.log(log)
     }
 
-    console.log(`### Beginning test ###`)
-    // DUT is now pinned to target release, run the test 
-    let result = await new Promise(async (resolve, reject) => {
-        let test = spawn('./test.sh', [
-            '-u',
-            `${global.dutUuid}`,
-            '-s',
-            `${sut}`, 
-            '-c',
-            `--privileged --network host --env BALENA_API_KEY=${process.env.BALENA_API_KEY} --env WIRED_IF=enp1s0u1u3u4 --env DEVICE_TYPE=latest --env APP=gh_rcooke_warwick/leviathan-migrator --env UDEV=1 -v /lib/modules:/lib/modules -v /run/dbus:/host/run/dbus`
-        ], { stdio: 'inherit', timeout: 1000 * 60 * 10 });
-
-        // test.stdout.on('data', (data) => {
-        //     console.log(`[Test stdout]: ${data.toString()}`)
-        // })
-
-        // test.stderr.on('data', (data) => {
-        //     console.log(`[Test stderr]: ${data.toString()}`)
-        // })
-        
-        // test.stdout.pipe(p)
-        // p.on('line', function (line) {
-        //     const tapLineRegex = /^\s*(ok|not ok)\s+\d+\s*-\s+.+/;
-        //     if(!tapLineRegex.test(line)){
-        //         console.log(line)
-        //     }
-        // })
-        test.on('exit', (code) => {
-            resolve(code)
-        });
-        test.on('error', (err) => {
-            process.off('SIGINT', handleSignal);
-            process.off('SIGTERM', handleSignal);
-            reject(err);
-        });
-    });
-
+    result = res.exitCode
     await teardown(global.dutUuid);
     process.exit(result)
 }

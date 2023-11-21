@@ -2,11 +2,11 @@
 #if building via balena builder/engine then no need, this will automatically evaluate to the target device arch
 ARG BALENA_ARCH=%%BALENA_ARCH%%
 
-FROM balenalib/${BALENA_ARCH}-alpine-node:16-run-20230811
+FROM balenalib/${BALENA_ARCH}-alpine-node:16-run
 
 WORKDIR /usr/app
 
-RUN apk add --no-cache libusb-dev dbus-dev python3 py3-pip py3-setuptools make build-base cmake git linux-headers eudev-dev libftdi1-dev popt-dev hidapi-dev
+RUN apk add --no-cache openssh libusb-dev dbus-dev python3 py3-pip py3-setuptools make build-base cmake git linux-headers eudev-dev libftdi1-dev popt-dev hidapi-dev util-linux
 
   
 # hadolint ignore=DL3018
@@ -46,6 +46,9 @@ RUN if [ "$(uname -m)" = "arm64" ] || [ "$(uname -m)" = "aarch64" ] ; \
 
 # Add balena-cli to PATH
 ENV PATH /usr/app/balena-cli:$PATH
+
+
+RUN git clone https://github.com/rcooke-warwick/sut-tests.git && cd sut-tests && npm install
 
 COPY entry.sh entry.sh
 
