@@ -1,13 +1,14 @@
 import { Autokit } from '@balena/autokit';
 import { OsDownloadOptions, getSdk } from 'balena-sdk';
-import { readFile, createReadStream, createWriteStream, unlink } from 'fs';
+import { readFile, createReadStream, createWriteStream, unlink, writeFile } from 'fs';
 import { exec } from 'child_process';
 import { promisify} from 'util';
 import * as retry from 'async-retry';
 
 const execAsync = promisify(exec);
+const writeFileAsync = promisify(writeFile);
 
-
+// Todo - make this configurable via device env vars
 const autokitConfig = {
     power: 'autokitRelay',
     sdMux: 'linuxAut',
@@ -68,14 +69,7 @@ async function main(){
     await autoKit.power.off();
     await autoKit.network.createWiredNetwork();
     
-    console.log(`Staring flash!`)
-    // Flash DUT
-    console.log(PATH)
-    console.log(process.env.FLASH_TYPE)
-    let check = await execAsync(`ls /tmp`)
-    console.log(check)
-    let checksd = await execAsync(`ls ${autoKit.sdMux.DEV_SD}`);
-    console.log(checksd)
+    console.log(`Starting flash!`)
     await autoKit.flash(PATH, process.env.FLASH_TYPE || 'raspberrypi3');
 
     // Power on DUT
@@ -83,23 +77,19 @@ async function main(){
 
     // Find the DUT UUID and IP address
     // Easier to find IP address first
-    let uuid = ''
     await retry(
         async () => {
             let res = await execAsync(`arp -a | grep ${process.env.WIRED_IF} | awk -F " " '{print $2}'`)
-            console.log(res)
             let ip = res.stdout.replace('(', '').replace(')','');
-            console.log(`ip address of DUT is ${ip}`)
         
-            
-
             // Using IP, find the UUID of the device
             res = await execAsync(`ssh root@${ip.trim()} -p 22222  -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "cat /mnt/boot/config.json" 2>/dev/null`);
             
-            console.log (res);
             let configJson = JSON.parse(res.stdout);
             let uuid = configJson.uuid;
         
+            // write this to a file so it can be used by ay subsequent tests
+            await writeFileAsync(`/tmp/uuid`, uuid);
             console.log(`UUID of resulting device is: ${uuid}`)
         },
         {
@@ -107,6 +97,8 @@ async function main(){
           minTimeout: 10 * 1000
         }
     );
+    
+    process.exit()
 }
 
 main();

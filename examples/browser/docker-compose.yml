@@ -16,7 +16,7 @@ services:
     volumes:
       - 'settings:/data' # Only required if using PERSISTENT flag (see below)
   sut:
-    image: bh.cr/gh_rcooke_warwick/tap-test:latest
+    build: ../../test-containers/tap-test
     privileged: true
     restart: "no"
     network_mode: host

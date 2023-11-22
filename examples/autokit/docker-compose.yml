@@ -1,0 +1,22 @@
+version: '2.1'
+
+services:
+  sut:
+    build: ../../test-containers/autokit
+    privileged: true
+    restart: "no"
+    network_mode: host
+    environment:
+      # you can make some of these balena cloud env vars for your autokit
+      - BALENA_ENV=balena-cloud.com
+      - BALENA_API_KEY=<API_KEY>
+      - DEVICE_TYPE=<DEVICE_TYPE>
+      - APP=<APP_ID_TO_TEST>
+      - VERSION=latest
+      - UDEV=1
+      - RELEASE=<RELEASE_OF_APP_ID_TO_TEST>
+    labels:
+      io.balena.features.supervisor-api: '1'
+      io.balena.features.kernel-modules: '1'
+      io.balena.features.dbus: '1'
+      
