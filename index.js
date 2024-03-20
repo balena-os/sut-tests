@@ -74,11 +74,12 @@ async function main() {
   // DUT is now pinned to target release, wait for the test 
   // at this point, we can assume that the device is actually "running" the target release
   // let testId = `${Math.random().toString(36).substring(2, 10)}`
-  let res = await waitSut( global.latestRelease, global.dutUuid);
+  let res = await waitSut(global.dutUuid);
+  console.table(res)
 
-  for (let log of res) {
-    console.log(log)
-  }
+  // for (let log of res) {
+  //   console.log(log)
+  // }
 
   // result = res.exitCode
   await teardown(global.dutUuid);
